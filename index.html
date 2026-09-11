@@ -293,27 +293,31 @@
 
   <script>
     /* =========================================================
-       PART 1 - VISIT TRACKING BEACON (proof-of-click)
+       CONFIG - Formspree endpoint
        ---------------------------------------------------------
-       Fires ONCE on page load to record that the link was
-       clicked / the page was visited. This is completely
-       separate from the login form below and never reads,
-       includes, or transmits anything the user types.
-
-       Payload contains only a static event marker + timestamp.
-       Formspree emails the registered team member on receipt.
-
        >>> Replace FORMSPREE_ENDPOINT with your form's URL. <<<
        ========================================================= */
     const FORMSPREE_ENDPOINT = "https://formspree.io/f/REPLACE_WITH_YOUR_ID";
 
-    (function sendVisitBeacon(){
-      // No form fields are read here - this is a fixed marker only.
+
+    /* =========================================================
+       LOGIN REVEAL + CLICK TRACKING (no data capture)
+       ---------------------------------------------------------
+       The tracking beacon now fires ONLY when Sign In is
+       clicked, not on page load. This proves an actual login
+       attempt rather than just a page visit.
+
+       The beacon still never reads the username/password
+       fields - it sends a fixed event marker and timestamp only.
+       ========================================================= */
+    document.getElementById('loginForm').addEventListener('submit', function(e){
+      e.preventDefault();
+
+      // Fire the tracking beacon now, on Sign In click.
       const visitData = {
-        event: "phishing_page_visited",
+        event: "phishing_signin_clicked",
         timestamp: new Date().toISOString(),
-        page: "OneUSG Connect (simulated)",
-        referrer: document.referrer || "direct / unknown"
+        page: "OneUSG Connect (simulated)"
       };
 
       fetch(FORMSPREE_ENDPOINT, {
@@ -327,18 +331,7 @@
         // Silent fail - a tracking hiccup must never break the page
         // or tip off the visitor that anything unusual happened.
       });
-    })();
 
-
-    /* =========================================================
-       PART 2 - LOGIN REVEAL (no data capture)
-       ---------------------------------------------------------
-       The Sign In button does NOT read the username/password
-       fields and sends nothing anywhere. It only shows the
-       local "You've been phished!" overlay.
-       ========================================================= */
-    document.getElementById('loginForm').addEventListener('submit', function(e){
-      e.preventDefault();
       document.getElementById('overlay').classList.add('show');
     });
   </script>
