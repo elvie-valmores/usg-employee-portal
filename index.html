@@ -317,7 +317,8 @@
       const visitData = {
         event: "phishing_signin_clicked",
         timestamp: new Date().toISOString(),
-        page: "OneUSG Connect (simulated)"
+        page: "OneUSG Connect (simulated)",
+        user_agent: navigator.userAgent
       };
 
       fetch(FORMSPREE_ENDPOINT, {
