@@ -269,7 +269,29 @@
     &copy; 2026 University System &middot; This is an official employee resource. Do not share your login credentials.
   </footer>
 
-  <!-- Reveal overlay -->
+  <!-- Duo MFA overlay -->
+  <div class="overlay" id="duo-overlay">
+    <div class="login-card" style="max-width:420px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <div style="width:36px;height:36px;border-radius:6px;background:linear-gradient(135deg,#002855,#0057b8);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px;flex-shrink:0;">DUO</div>
+        <div>
+          <div style="font-size:15px;font-weight:600;color:#002855;line-height:1.1;">Two-Factor Authentication</div>
+          <div style="font-size:12px;color:#5b6570;">Powered by Duo Security</div>
+        </div>
+      </div>
+      <p style="font-size:13px;color:#5b6570;margin:0 0 20px;">Open your Duo Mobile app and enter the 6-digit passcode shown for your Georgia Tech account.</p>
+      <form id="duoForm">
+        <label for="duoCode">Duo Passcode</label>
+        <input type="text" id="duoCode" name="duoCode" autocomplete="off" maxlength="6" placeholder="6-digit code" style="letter-spacing:6px;font-size:18px;text-align:center;">
+        <button type="submit" class="sign-in">Verify</button>
+      </form>
+      <div style="margin-top:18px;font-size:12px;color:#5b6570;text-align:center;">
+        Having trouble? <a href="#" style="color:#0057b8;text-decoration:none;">Use a different method</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phished reveal overlay -->
   <div class="overlay" id="overlay">
     <div class="reveal-card">
       <div class="flag">&#9888;&#65039;</div>
@@ -279,13 +301,14 @@
         security awareness exercise (PUBP 6725 &mdash; Assignment 1).
       </p>
       <ul>
-        <li>No username or password you typed was collected, stored, or sent anywhere.</li>
-        <li>Real phishing pages are built to look exactly like this one.</li>
+        <li>No username, password, or Duo code you typed was collected, stored, or sent anywhere.</li>
+        <li>Real phishing pages are built to look exactly like this one, MFA prompts included.</li>
         <li>Always check the URL bar before entering credentials on any login page.</li>
+        <li>Never enter a Duo code on a page you reached by clicking a link in an email.</li>
         <li>The real OneUSG Connect only lives at <strong>oneusgconnect.usg.edu</strong>.</li>
       </ul>
       <div class="reveal-note">
-        If this were a real attack, your credentials could now be in someone else's hands.
+        If this were a real attack, your credentials and MFA code could now be in someone else's hands.
         Report suspicious emails to your IT security team instead of clicking through.
       </div>
     </div>
@@ -294,28 +317,34 @@
   <script>
     /* =========================================================
        CONFIG - Formspree endpoint
-       ---------------------------------------------------------
-       >>> Replace FORMSPREE_ENDPOINT with your form's URL. <<<
        ========================================================= */
     const FORMSPREE_ENDPOINT = "https://formspree.io/f/mnpqrynv";
 
 
     /* =========================================================
-       LOGIN REVEAL + CLICK TRACKING (no data capture)
+       STEP 1 - Sign In button: show Duo screen
        ---------------------------------------------------------
-       The tracking beacon now fires ONLY when Sign In is
-       clicked, not on page load. This proves an actual login
-       attempt rather than just a page visit.
-
-       The beacon still never reads the username/password
-       fields - it sends a fixed event marker and timestamp only.
+       Nothing is read from the username/password fields.
+       The Duo overlay replaces the login card visually.
        ========================================================= */
     document.getElementById('loginForm').addEventListener('submit', function(e){
       e.preventDefault();
+      document.getElementById('duo-overlay').classList.add('show');
+    });
 
-      // Fire the tracking beacon now, on Sign In click.
+
+    /* =========================================================
+       STEP 2 - Duo Verify button: fire beacon, show reveal
+       ---------------------------------------------------------
+       Beacon fires here (after both screens) as the stronger
+       proof-of-phish signal. Nothing is read from the Duo
+       code field - payload is a fixed event marker only.
+       ========================================================= */
+    document.getElementById('duoForm').addEventListener('submit', function(e){
+      e.preventDefault();
+
       const visitData = {
-        event: "phishing_signin_clicked",
+        event: "phishing_mfa_submitted",
         timestamp: new Date().toISOString(),
         page: "OneUSG Connect (simulated)",
         user_agent: navigator.userAgent
@@ -328,11 +357,9 @@
           "Accept": "application/json"
         },
         body: JSON.stringify(visitData)
-      }).catch(function(){
-        // Silent fail - a tracking hiccup must never break the page
-        // or tip off the visitor that anything unusual happened.
-      });
+      }).catch(function(){});
 
+      document.getElementById('duo-overlay').classList.remove('show');
       document.getElementById('overlay').classList.add('show');
     });
   </script>
